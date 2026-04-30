@@ -279,7 +279,7 @@ async function processMessage(bot, msg) {
 
 **Где меня потестить?**
 Залетай в комментарии к [этому посту](https://t.me/VETA14/13) или любому другому в канале, там я отвечаю всем.
-*(Просто напиши там «Сыч» или ответь реплаем на любое мое сообщение)*
+*(Просто напиши там «67» или ответь реплаем на любое мое сообщение)*
 
 **Хочешь себе такого же бота?**
 Весь мой код открыт! Ты можешь скачать меня, вставить свои ключи и запустить на своем компе или сервере.
@@ -392,7 +392,7 @@ async function processMessage(bot, msg) {
 
   // === КОМАНДЫ ===
   if (command === '/version') {
-    return bot.sendMessage(chatId, `🦉 **Sych Bot**\nВерсия: \`v${config.version}\``, getBaseOptions(threadId));
+    return bot.sendMessage(chatId, `😼 **Sych Bot**\nВерсия: \`v${config.version}\``, getBaseOptions(threadId));
 }
 
   // === АДМИН-ПАНЕЛЬ (БАНЫ) ===
@@ -452,24 +452,24 @@ async function processMessage(bot, msg) {
     const helpText = `
 *Вот тебе гайд*
 
-**🦉 Вижу и Слышу:**
+**😼 Вижу и Слышу:**
 • Кидай войс — расшифрую текст и напишу краткую суть.
 • Кидай фото или видео — пойму, что там, и прокомментирую.
 • Кидай PDF, TXT или код — прочитаю и отвечу на вопросы.
 • Кидай ссылку на картинку (.jpg, .png, .webp) — скачаю и посмотрю.
 • Умею гуглить актуальную инфу (курсы, новости, погода).
-• «Сыч напомни завтра в 10» — поставлю напоминание. Можно реплаем на сообщение с датой.
+• «67 напомни завтра в 10» — поставлю напоминание. Можно реплаем на сообщение с датой.
 
 **🎲 Развлекуха:**
-• "Сыч кинь монетку" — Орёл/Решка.
-• "Сыч число 1-100" — Рандомное число в диапазоне.
-• "Сыч кто из нас [вопрос]" — Выберу случайного из чата.
+• "67 кинь монетку" — Орёл/Решка.
+• "67 число 1-100" — Рандомное число в диапазоне.
+• "67 кто из нас [вопрос]" — Выберу случайного из чата.
 
 **🕵️ Досье и Память:**
-• "Сыч кто я?" — Моё честное мнение о тебе.
-• "Сыч расскажи про @юзера" — Выдам досье на участника.
-• "Сыч стата" — Статистика токенов за сутки.
-• "Сыч, этот чат про [тема]" — Задать тему чата вручную.
+• "67 кто я?" — Моё честное мнение о тебе.
+• "67 расскажи про @юзера" — Выдам досье на участника.
+• "67 стата" — Статистика токенов за сутки.
+• "67, этот чат про [тема]" — Задать тему чата вручную.
 
 **⚙️ Настройки:**
 • /mute — Режим тишины (перестану отвечать в этом чате).
@@ -483,12 +483,12 @@ _ver: ${config.version}_
 
   if (command === '/mute') {
     const nowMuted = storage.toggleMute(chatId, threadId);
-    return bot.sendMessage(chatId, nowMuted ? "🦉 Окей молчу" : "🦉 Я тут", getBaseOptions(threadId));
+    return bot.sendMessage(chatId, nowMuted ? "😼 Окей молчу" : "😼 Я тут", getBaseOptions(threadId));
   }
   if (command === '/reset') {
     chatHistory[chatId] = [];
     analysisBuffers[chatId] = [];
-    return bot.sendMessage(chatId, "🦉 Окей, всё забыл, ну было и было", getBaseOptions(threadId));
+    return bot.sendMessage(chatId, "😼 Окей, всё забыл, ну было и было", getBaseOptions(threadId));
   }
 
   if (command === '/restart' && userId === config.adminId) {
@@ -514,7 +514,7 @@ _ver: ${config.version}_
   addToHistory(chatId, senderName, text);
 
   // === СТАТИСТИКА ===
-  if (cleanText === 'сыч стата' || cleanText === 'сыч статистика') {
+  if (cleanText === '67 стата' || cleanText === '67 статистика') {
     const report = ai.getStatsReport();
     return bot.sendMessage(chatId, report, getReplyOptions(msg));
   }
@@ -855,7 +855,7 @@ _ver: ${config.version}_
 
         stopTyping(); // <-- Всё, сообщение ушло, выключаем статус
         
-        addToHistory(chatId, "Сыч", aiResponse);
+        addToHistory(chatId, "67", aiResponse);
 
     } catch (error) {
         stopTyping(); // <-- Если ошибка, ОБЯЗАТЕЛЬНО выключаем
