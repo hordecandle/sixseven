@@ -49,5 +49,5 @@ module.exports = {
   googleNativeModel: 'gemini-2.5-flash-lite', 
   fallbackModelName: 'gemini-2.5-flash-lite', 
   contextSize: 30,
-  triggerRegex: /(?<![а-яё-z])(67|сиксевен|sixseven)(?![а-яё-z])/i,
+  triggerRegex: /(?<![а-яёa-z])(67|сиксевен|sixseven)(?![а-яёa-z])/i,
 };
