@@ -27,7 +27,7 @@ const bot = new TelegramBot(config.telegramToken, { polling: true });
 const ai = require('./services/ai');
 ai.setBot(bot);
 
-console.log("Сыч запущен и готов пояснять за жизнь.");
+console.log("67 запущен и готов пояснять за мяу.");
 console.log(`Admin ID: ${config.adminId}`);
 
 // === ТИКЕР НАПОМИНАЛОК (Проверка каждую минуту) ===
