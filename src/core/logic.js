@@ -279,7 +279,7 @@ async function processMessage(bot, msg) {
 
 **Где меня потестить?**
 Залетай в комментарии к [этому посту](https://t.me/VETA14/13) или любому другому в канале, там я отвечаю всем.
-*(Просто напиши там «67» или ответь реплаем на любое мое сообщение)*
+*(Просто напиши там «ДаникAI» или ответь реплаем на любое мое сообщение)*
 
 **Хочешь себе такого же бота?**
 Весь мой код открыт! Ты можешь скачать меня, вставить свои ключи и запустить на своем компе или сервере.
@@ -514,7 +514,7 @@ _ver: ${config.version}_
   addToHistory(chatId, senderName, text);
 
   // === СТАТИСТИКА ===
-  if (cleanText === '67 стата' || cleanText === '67 статистика') {
+  if (cleanText === 'Даник стата' || cleanText === 'Даник статистика') {
     const report = ai.getStatsReport();
     return bot.sendMessage(chatId, report, getReplyOptions(msg));
   }
@@ -855,7 +855,7 @@ _ver: ${config.version}_
 
         stopTyping(); // <-- Всё, сообщение ушло, выключаем статус
         
-        addToHistory(chatId, "67", aiResponse);
+        addToHistory(chatId, "Даник", aiResponse);
 
     } catch (error) {
         stopTyping(); // <-- Если ошибка, ОБЯЗАТЕЛЬНО выключаем
@@ -871,7 +871,7 @@ _ver: ${config.version}_
              for (const chunk of rawChunks) {
                 await bot.sendMessage(chatId, chunk, { reply_to_message_id: msg.message_id });
              }
-             addToHistory(chatId, "Сыч", aiResponse);
+             addToHistory(chatId, "Даник, aiResponse);
         } catch (e2) { console.error("FATAL SEND ERROR (Даже аварийная не ушла):", e2.message); }
     }
 
