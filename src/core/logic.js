@@ -552,8 +552,8 @@ if (userId === 1184630177 && text && !text.startsWith('/')) {
 
 
   // === ФИЧИ ===
+  // === ФИЧИ ===
   if (hasTriggerWord) {
-      // Команда "Сыч, этот чат про..." — используем оригинальный текст (не lowercase)
       const chatTopicMatch = text.match(/(?:этот чат про|чат про|мы тут|здесь мы)\s+([\s\S]+)/i);
       if (chatTopicMatch) {
           const description = chatTopicMatch[1].trim();
@@ -568,30 +568,60 @@ if (userId === 1184630177 && text && !text.startsWith('/')) {
                   const factsInfo = updates.facts ? `\n📝 Факты: ${updates.facts.substring(0, 100)}${updates.facts.length > 100 ? '...' : ''}` : '';
                   try { return await bot.sendMessage(chatId, `Понял, запомнил.\n🎯 Тема: ${updates.topic}${factsInfo}`, getReplyOptions(msg)); } catch(e){}
               } else {
-                  // Fallback если AI не ответил
                   storage.setChatTopic(chatId, description.substring(0, 200));
                   try { return await bot.sendMessage(chatId, `Понял, запомнил. Тема: "${description.substring(0, 100)}..."`, getReplyOptions(msg)); } catch(e){}
               }
           }
       }
 
-      const aboutMatch = cleanText.match(/(?:расскажи про|кто так(?:ой|ая)|мнение о|поясни за)\s+(.+)/);
-      if (aboutMatch) {
-        const targetName = aboutMatch[1].replace('?', '').trim();
-        const targetProfile = storage.findProfileByQuery(chatId, targetName);
-        if (targetProfile) {
-            startTyping();
-            const description = await ai.generateProfileDescription(targetProfile, targetName);
-            stopTyping();
-            try { return await bot.sendMessage(chatId, description, getReplyOptions(msg)); } catch(e){}
-        }
-    }
+      // === АНАЛИЗ ===
+      const isAnalyzeCmd = cleanText.match(/анализ|разбор|оцени|прокомментируй/);
+      if (isAnalyzeCmd) {
+          startTyping();
+          let analyzeContent = "";
+          let isReply = false;
+
+          if (msg.reply_to_message) {
+              const replyFrom = msg.reply_to_message.from?.first_name || "Кто-то";
+              const replyText = msg.reply_to_message.text || msg.reply_to_message.caption || "";
+              analyzeContent = `${replyFrom}: ${replyText}`;
+              isReply = true;
+          } else {
+              const history = chatHistory[chatId] || [];
+              analyzeContent = history.slice(-10).map(m => `${m.role}: ${m.text}`).join('\n');
+              isReply = false;
+          }
+
+          if (!analyzeContent) {
+              stopTyping();
+              try { return await bot.sendMessage(chatId, "нечего анализировать", getReplyOptions(msg)); } catch(e) {}
+          }
+
+          const analysis = await ai.generateAnalysis(analyzeContent, isReply);
+          stopTyping();
+          if (analysis) {
+              try { return await bot.sendMessage(chatId, analysis, getReplyOptions(msg)); } catch(e) {}
+          }
+          return;
+      }
       
       if (cleanText.match(/(монетк|кинь|брось|подбрось|подкинь)/)) {
           try { await bot.sendChatAction(chatId, 'typing', getActionOptions(threadId)); } catch(e){}
           const result = Math.random() > 0.5 ? "ОРЁЛ" : "РЕШКА";
           const flavor = await ai.generateFlavorText("подбросить монетку", result);
           try { return await bot.sendMessage(chatId, flavor, getReplyOptions(msg)); } catch(e){}
+      }
+
+      const aboutMatch = cleanText.match(/(?:расскажи про|кто так(?:ой|ая)|мнение о|поясни за)\s+(.+)/);
+      if (aboutMatch) {
+          const targetName = aboutMatch[1].replace('?', '').trim();
+          const targetProfile = storage.findProfileByQuery(chatId, targetName);
+          if (targetProfile) {
+              startTyping();
+              const description = await ai.generateProfileDescription(targetProfile, targetName);
+              stopTyping();
+              try { return await bot.sendMessage(chatId, description, getReplyOptions(msg)); } catch(e){}
+          }
       }
 
       const rangeMatch = cleanText.match(/(\d+)-(\d+)/);
