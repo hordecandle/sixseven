@@ -26,7 +26,7 @@ module.exports = {
   // === АКТУАЛЬНЫЕ МОДЕЛИ (ЯНВАРЬ 2026) ===
   
   // 1. УМНАЯ (Ответы в чате)
-  mainModel: 'deepseek/deepseek-chat-v3-0324',
+  mainModel: 'google/gemini-3-flash-preview',
   
   // 2. ЛОГИКА (Анализ, реакции, проверки)
   // Free версия недоступна, используем эффективную платную
