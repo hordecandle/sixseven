@@ -515,18 +515,48 @@ async generateFlavorText(task, result) {
   }
   
 // === АНАЛИЗ ПО КОМАНДЕ ===
-async generateAnalysis(content, isReply) {
+async generateAnalysis(content, isReply, imageBuffer = null, mimeType = "image/jpeg") {
     const prompt = prompts.analyze(content, isReply);
+    const danyaStyle = storage.getDanyaStyleText();
+    const systemText = prompts.system(danyaStyle, null);
+
+    // Если есть картинка — используем Native (Gemini умеет видеть)
+    if (imageBuffer && this.keys.length > 0) {
+        try {
+            return await this.executeNativeWithRetry(async () => {
+                const parts = [
+                    { inlineData: { mimeType: mimeType, data: imageBuffer.toString("base64") } },
+                    { text: prompt }
+                ];
+                const result = await this.nativeModel.generateContent({
+                    contents: [{ role: 'user', parts }],
+                    generationConfig: { maxOutputTokens: 1000, temperature: 0.9 }
+                });
+                return result.response.text();
+            });
+        } catch (e) {
+            console.error(`[ANALYZE MEDIA FAIL] ${e.message}`);
+        }
+    }
+
+    // Текстовый анализ — через OpenRouter
     if (this.openai) {
         try {
-            const danyaStyle = storage.getDanyaStyleText();
+            const messages = [
+                { role: "system", content: systemText },
+                { role: "user", content: [] }
+            ];
+            messages[1].content.push({ type: "text", text: prompt });
+            if (imageBuffer) {
+                messages[1].content.push({
+                    type: "image_url",
+                    image_url: { url: `data:${mimeType};base64,${imageBuffer.toString('base64')}` }
+                });
+            }
             const completion = await this.openai.chat.completions.create({
                 model: config.mainModel,
-                messages: [
-                    { role: "system", content: prompts.system(danyaStyle, null) },
-                    { role: "user", content: prompt }
-                ],
-                max_tokens: 1500,
+                messages: messages,
+                max_tokens: 1000,
                 temperature: 0.9,
             });
             storage.incrementStat('smart');
