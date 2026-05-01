@@ -115,7 +115,7 @@ class AiService {
 
     this.nativeModel = genAI.getGenerativeModel({ 
         model: modelName,
-        systemInstruction: prompts.system(storage.getDanyaStyleText()),
+        systemInstruction: prompts.system(storage.getDanyaStyleText(), null),
         safetySettings: safetySettings,
         // Включаем нативный поиск Google (Tools)
         tools: [{ googleSearch: {} }] 
@@ -221,7 +221,7 @@ async performSearch(query) {
 }
   
 // === ОСНОВНОЙ ОТВЕТ ===
-async getResponse(history, currentMessage, imageBuffer = null, mimeType = "image/jpeg", userInstruction = "", userProfile = null, isSpontaneous = false, chatProfile = null) {
+async getResponse(history, currentMessage, imageBuffer = null, mimeType = "image/jpeg", userInstruction = "", userProfile = null, isSpontaneous = false, chatProfile = null, chatId = null) {
   this.resetStatsIfNeeded();
   console.log(`[DEBUG AI] getResponse вызван.`);
 
@@ -284,7 +284,8 @@ async getResponse(history, currentMessage, imageBuffer = null, mimeType = "image
   // 3. ЗАПРОС К SMART МОДЕЛИ (API)
   if (this.openai) {
       try {
-          const messages = [{ role: "system", content: prompts.system(storage.getDanyaStyleText()) }, { role: "user", content: [] }];
+          const danyaProfile = chatId ? storage.getProfile(chatId, 1184630177) : null;
+          const messages = [{ role: "system", content: prompts.system(storage.getDanyaStyleText(), danyaProfile) }, { role: "user", content: [] }];
           messages[1].content.push({ type: "text", text: fullPromptText });
           if (imageBuffer) {
               messages[1].content.push({
@@ -312,7 +313,7 @@ async getResponse(history, currentMessage, imageBuffer = null, mimeType = "image
 }
 
 // Helper для Native вызова (чтобы не дублировать код)
-async generateViaNative(history, currentMessage, imageBuffer, mimeType, userInstruction, userProfile, isSpontaneous, chatProfile = null) {
+async generateViaNative(history, currentMessage, imageBuffer, mimeType, userInstruction, userProfile, isSpontaneous, chatProfile = null, chatId = null) {
     const relevantHistory = history.slice(-20);
     const contextStr = relevantHistory.map(m => `${m.role}: ${m.text}`).join('\n');
 
@@ -541,8 +542,9 @@ async learnFromRealDanya(message) {
             rawExamples: [...(current.rawExamples || []), ...(result.rawExamples || [])].slice(-20),
         };
 
-        storage.saveDanyaStyle(merged);
+                storage.saveDanyaStyle(merged);
         console.log(`[DANYA LEARN] Стиль обновлён. Словарь: ${merged.vocabulary.length} слов.`);
+        this.initNativeModel();
     } catch (e) {
         console.error('[DANYA LEARN ERROR]', e.message);
     }
