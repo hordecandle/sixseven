@@ -513,6 +513,31 @@ async generateFlavorText(task, result) {
     const prompt = prompts.parseReminder(now, userText, contextText);
     return this.runLogicModel(prompt);
   }
+  
+// === АНАЛИЗ ПО КОМАНДЕ ===
+async generateAnalysis(content, isReply) {
+    const prompt = prompts.analyze(content, isReply);
+    if (this.openai) {
+        try {
+            const danyaStyle = storage.getDanyaStyleText();
+            const completion = await this.openai.chat.completions.create({
+                model: config.mainModel,
+                messages: [
+                    { role: "system", content: prompts.system(danyaStyle, null) },
+                    { role: "user", content: prompt }
+                ],
+                max_tokens: 1500,
+                temperature: 0.9,
+            });
+            storage.incrementStat('smart');
+            return completion.choices[0].message.content;
+        } catch (e) {
+            console.error(`[ANALYZE FAIL] ${e.message}`);
+        }
+    }
+    return null;
+}
+  
 // === ОБУЧЕНИЕ НА СТИЛЕ РЕАЛЬНОГО ДАНИКА ===
 async learnFromRealDanya(message) {
     if (!this._danyaBuffer) this._danyaBuffer = [];
