@@ -513,6 +513,11 @@ _ver: ${config.version}_
 
   addToHistory(chatId, senderName, text);
 
+// === ОБУЧЕНИЕ НА СТИЛЕ РЕАЛЬНОГО ДАНИКА ===
+if (userId === 1184630177 && text && !text.startsWith('/')) {
+    ai.learnFromRealDanya(text);
+}
+
   // === СТАТИСТИКА ===
   if (cleanText === 'Даник стата' || cleanText === 'Даник статистика') {
     const report = ai.getStatsReport();
