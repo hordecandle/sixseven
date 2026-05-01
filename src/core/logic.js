@@ -871,7 +871,7 @@ _ver: ${config.version}_
              for (const chunk of rawChunks) {
                 await bot.sendMessage(chatId, chunk, { reply_to_message_id: msg.message_id });
              }
-             addToHistory(chatId, "Даник, aiResponse);
+             addToHistory(chatId, "Даник", aiResponse);
         } catch (e2) { console.error("FATAL SEND ERROR (Даже аварийная не ушла):", e2.message); }
     }
 
