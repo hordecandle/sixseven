@@ -142,6 +142,28 @@ async function initChatProfile(bot, chatId) {
                 storage.updateChatProfile(chatId, updates);
                 console.log(`[CHAT PROFILE INIT] Инициализирован профиль чата ${chatId}: "${updates.topic}"`);
             }
+            // Ссылка прямо в сообщении (без реплая)
+          const directUrl = text.match(/https?:\/\/[^\s]+/);
+          if (!msg.reply_to_message && directUrl) {
+              try {
+                  const resp = await axios.get(directUrl[0], {
+                      timeout: 8000,
+                      headers: { 'User-Agent': 'Mozilla/5.0' }
+                  });
+                  const html = resp.data;
+                  const plainText = html
+                      .replace(/<script[\s\S]*?<\/script>/gi, '')
+                      .replace(/<style[\s\S]*?<\/style>/gi, '')
+                      .replace(/<[^>]+>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim()
+                      .substring(0, 3000);
+                  if (plainText.length > 100) {
+                      analyzeContent = `Ссылка: ${directUrl[0]}\n\nСодержимое:\n${plainText}`;
+                      isReply = false;
+                  }
+              } catch(e) {}
+          }
         } else {
             console.log(`[CHAT PROFILE INIT] Недостаточно сообщений для анализа чата ${chatId}, ждём накопления`);
         }
@@ -638,6 +660,33 @@ if (userId === 1184630177 && text && !text.startsWith('/')) {
                       analyzeBuffer = Buffer.from(resp.data);
                       analyzeMime = "video/mp4";
                   } catch(e) {}
+              }
+              // Ссылка — скачиваем страницу
+              else if (msg.reply_to_message.text || msg.reply_to_message.caption) {
+                  const replyTextFull = msg.reply_to_message.text || msg.reply_to_message.caption || "";
+                  const urlMatch = replyTextFull.match(/https?:\/\/[^\s]+/);
+                  if (urlMatch) {
+                      try {
+                          const resp = await axios.get(urlMatch[0], {
+                              timeout: 8000,
+                              headers: { 'User-Agent': 'Mozilla/5.0' }
+                          });
+                          const html = resp.data;
+                          // Вырезаем текст из HTML грубо
+                          const plainText = html
+                              .replace(/<script[\s\S]*?<\/script>/gi, '')
+                              .replace(/<style[\s\S]*?<\/style>/gi, '')
+                              .replace(/<[^>]+>/g, ' ')
+                              .replace(/\s+/g, ' ')
+                              .trim()
+                              .substring(0, 3000);
+                          if (plainText.length > 100) {
+                              analyzeContent = `Ссылка: ${urlMatch[0]}\n\nСодержимое:\n${plainText}`;
+                          }
+                      } catch(e) {
+                          console.error("Ошибка загрузки ссылки для анализа:", e.message);
+                      }
+                  }
               }
           } else {
               const history = chatHistory[chatId] || [];
