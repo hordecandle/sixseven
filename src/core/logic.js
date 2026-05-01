@@ -574,30 +574,83 @@ if (userId === 1184630177 && text && !text.startsWith('/')) {
           }
       }
 
-      // === АНАЛИЗ ===
+// === АНАЛИЗ ===
       const isAnalyzeCmd = cleanText.match(/анализ|разбор|оцени|прокомментируй/);
       if (isAnalyzeCmd) {
           startTyping();
           let analyzeContent = "";
+          let analyzeBuffer = null;
+          let analyzeMime = "image/jpeg";
           let isReply = false;
 
           if (msg.reply_to_message) {
               const replyFrom = msg.reply_to_message.from?.first_name || "Кто-то";
               const replyText = msg.reply_to_message.text || msg.reply_to_message.caption || "";
-              analyzeContent = `${replyFrom}: ${replyText}`;
+              analyzeContent = replyText ? `${replyFrom}: ${replyText}` : `${replyFrom} отправил медиа`;
               isReply = true;
+
+              // Скачиваем фото из реплая
+              if (msg.reply_to_message.photo) {
+                  try {
+                      const photoObj = msg.reply_to_message.photo[msg.reply_to_message.photo.length - 1];
+                      const link = await bot.getFileLink(photoObj.file_id);
+                      const resp = await axios.get(link, { responseType: 'arraybuffer' });
+                      analyzeBuffer = Buffer.from(resp.data);
+                      analyzeMime = "image/jpeg";
+                  } catch(e) { console.error("Ошибка фото для анализа:", e.message); }
+              }
+              // Стикер
+              else if (msg.reply_to_message.sticker && !msg.reply_to_message.sticker.is_animated && !msg.reply_to_message.sticker.is_video) {
+                  try {
+                      const link = await bot.getFileLink(msg.reply_to_message.sticker.file_id);
+                      const resp = await axios.get(link, { responseType: 'arraybuffer' });
+                      analyzeBuffer = Buffer.from(resp.data);
+                      analyzeMime = "image/webp";
+                  } catch(e) {}
+              }
+              // Видео
+              else if (msg.reply_to_message.video) {
+                  const vid = msg.reply_to_message.video;
+                  if (vid.file_size <= 20 * 1024 * 1024) {
+                      try {
+                          const link = await bot.getFileLink(vid.file_id);
+                          const resp = await axios.get(link, { responseType: 'arraybuffer' });
+                          analyzeBuffer = Buffer.from(resp.data);
+                          analyzeMime = vid.mime_type || "video/mp4";
+                      } catch(e) {}
+                  }
+              }
+              // Голосовое — транскрибируем сначала
+              else if (msg.reply_to_message.voice) {
+                  try {
+                      const link = await bot.getFileLink(msg.reply_to_message.voice.file_id);
+                      const resp = await axios.get(link, { responseType: 'arraybuffer' });
+                      const voiceBuf = Buffer.from(resp.data);
+                      const transcription = await ai.transcribeAudio(voiceBuf, replyFrom, 'audio/ogg');
+                      if (transcription) analyzeContent = `${replyFrom} сказал: ${transcription.text}`;
+                  } catch(e) {}
+              }
+              // Видео-кружочек
+              else if (msg.reply_to_message.video_note) {
+                  try {
+                      const link = await bot.getFileLink(msg.reply_to_message.video_note.file_id);
+                      const resp = await axios.get(link, { responseType: 'arraybuffer' });
+                      analyzeBuffer = Buffer.from(resp.data);
+                      analyzeMime = "video/mp4";
+                  } catch(e) {}
+              }
           } else {
               const history = chatHistory[chatId] || [];
               analyzeContent = history.slice(-10).map(m => `${m.role}: ${m.text}`).join('\n');
               isReply = false;
           }
 
-          if (!analyzeContent) {
+          if (!analyzeContent && !analyzeBuffer) {
               stopTyping();
               try { return await bot.sendMessage(chatId, "нечего анализировать", getReplyOptions(msg)); } catch(e) {}
           }
 
-          const analysis = await ai.generateAnalysis(analyzeContent, isReply);
+          const analysis = await ai.generateAnalysis(analyzeContent, isReply, analyzeBuffer, analyzeMime);
           stopTyping();
           if (analysis) {
               try { return await bot.sendMessage(chatId, analysis, getReplyOptions(msg)); } catch(e) {}
