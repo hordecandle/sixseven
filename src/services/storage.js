@@ -618,6 +618,39 @@ class StorageService {
 
     console.log(`[CHAT PROFILE] Тема установлена вручную для ${chatId}: "${topic}"`);
   }
-}
+
+  // === СТИЛЬ РЕАЛЬНОГО ДАНИКА ===
+
+  getDanyaStyle() {
+    try {
+      const data = fs.readFileSync('./data/danya_style.json', 'utf-8');
+      return JSON.parse(data);
+    } catch {
+      return { typicalLength: null, vocabulary: [], patterns: [], rawExamples: [], updatedAt: null };
+    }
+  }
+
+  saveDanyaStyle(style) {
+    style.updatedAt = new Date().toISOString();
+    fs.writeFileSync('./data/danya_style.json', JSON.stringify(style, null, 2));
+  }
+
+  getDanyaStyleText() {
+    const style = this.getDanyaStyle();
+    if (!style.typicalLength) return null;
+
+    const lines = [];
+    if (style.typicalLength) lines.push(`Длина сообщений: ${style.typicalLength}`);
+    if (style.punctuation) lines.push(`Пунктуация: ${style.punctuation}`);
+    if (style.vocabulary?.length) lines.push(`Словарь: ${style.vocabulary.join(', ')}`);
+    if (style.humorStyle) lines.push(`Юмор: ${style.humorStyle}`);
+    if (style.patterns?.length) lines.push(`Паттерны: ${style.patterns.join('; ')}`);
+    if (style.neverDoes?.length) lines.push(`Никогда не делает: ${style.neverDoes.join(', ')}`);
+    if (style.rawExamples?.length) lines.push(`Примеры его фраз: "${style.rawExamples.join('", "')}"`);
+
+    return lines.join('\n');
+  }
+
+}  // <-- закрывающая скобка класса
 
 module.exports = new StorageService();
