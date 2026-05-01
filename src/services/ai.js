@@ -115,7 +115,7 @@ class AiService {
 
     this.nativeModel = genAI.getGenerativeModel({ 
         model: modelName,
-        systemInstruction: prompts.system(),
+        systemInstruction: prompts.system(storage.getDanyaStyleText()),
         safetySettings: safetySettings,
         // Включаем нативный поиск Google (Tools)
         tools: [{ googleSearch: {} }] 
@@ -284,7 +284,7 @@ async getResponse(history, currentMessage, imageBuffer = null, mimeType = "image
   // 3. ЗАПРОС К SMART МОДЕЛИ (API)
   if (this.openai) {
       try {
-          const messages = [{ role: "system", content: prompts.system() }, { role: "user", content: [] }];
+          const messages = [{ role: "system", content: prompts.system(storage.getDanyaStyleText()) }, { role: "user", content: [] }];
           messages[1].content.push({ type: "text", text: fullPromptText });
           if (imageBuffer) {
               messages[1].content.push({
@@ -512,6 +512,41 @@ async generateFlavorText(task, result) {
     const prompt = prompts.parseReminder(now, userText, contextText);
     return this.runLogicModel(prompt);
   }
+// === ОБУЧЕНИЕ НА СТИЛЕ РЕАЛЬНОГО ДАНИКА ===
+async learnFromRealDanya(message) {
+    if (!this._danyaBuffer) this._danyaBuffer = [];
+    this._danyaBuffer.push(message);
+
+    if (this._danyaBuffer.length < 5) {
+        console.log(`[DANYA LEARN] Буфер: ${this._danyaBuffer.length}/5`);
+        return;
+    }
+
+    const messages = this._danyaBuffer.splice(0);
+    const existingStyle = storage.getDanyaStyleText();
+    const prompt = prompts.analyzeRealDanya(existingStyle, messages.join('\n'));
+
+    try {
+        const result = await this.runLogicModel(prompt);
+        if (!result) return;
+
+        const current = storage.getDanyaStyle();
+        const merged = {
+            typicalLength: result.typicalLength || current.typicalLength,
+            punctuation: result.punctuation || current.punctuation,
+            humorStyle: result.humorStyle || current.humorStyle,
+            vocabulary: [...new Set([...(current.vocabulary || []), ...(result.vocabulary || [])])].slice(0, 50),
+            patterns: [...new Set([...(current.patterns || []), ...(result.patterns || [])])].slice(0, 20),
+            neverDoes: [...new Set([...(current.neverDoes || []), ...(result.neverDoes || [])])].slice(0, 20),
+            rawExamples: [...(current.rawExamples || []), ...(result.rawExamples || [])].slice(-20),
+        };
+
+        storage.saveDanyaStyle(merged);
+        console.log(`[DANYA LEARN] Стиль обновлён. Словарь: ${merged.vocabulary.length} слов.`);
+    } catch (e) {
+        console.error('[DANYA LEARN ERROR]', e.message);
+    }
+}
 }
 
 module.exports = new AiService();
